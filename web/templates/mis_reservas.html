@@ -1,0 +1,226 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SportReserve - Mis Reservas</title>
+    <link rel="icon" type="image/png" href="{% static 'img/logo-top.png' %}">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { background-color: #f8f9fa; }
+        
+        /* Estilos de las Tarjetas */
+        .card-reserva {
+            transition: all 0.3s;
+            border-left: 5px solid #2E8B57; /* Verde (Pagado) por defecto */
+        }
+        .card-reserva:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Estilo específico para Pendientes */
+        .estado-pendiente { 
+            border-left-color: #ffc107; /* Amarillo */
+        }
+        
+        /* Barra de Filtros */
+        .filter-bar {
+            background: white;
+            border-radius: 50px;
+            padding: 8px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-light bg-white shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-success" href="{% url 'index' %}">
+                <i class="fas fa-arrow-left"></i> Volver al Inicio
+            </a>
+            <span class="navbar-text fw-bold text-dark">
+                <i class="fas fa-user-circle text-primary"></i> {{ user.first_name|default:user.username }}
+            </span>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        
+        <!-- ENCABEZADO Y FILTROS -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <h2 class="fw-bold mb-0 text-dark"><i class="fas fa-history text-success"></i> Mi Historial</h2>
+            
+            <!-- Formulario de Filtro (Envía GET automático al cambiar) -->
+            <form method="GET" class="filter-bar">
+                <label class="me-2 text-muted fw-bold small"><i class="fas fa-filter"></i> MES:</label>
+                <select name="mes" class="form-select border-0 bg-light rounded-pill py-1" onchange="this.form.submit()" style="width: 160px; font-weight: 500;">
+                    <option value="todos">Todos</option>
+                    <option value="1" {% if mes_actual == '1' %}selected{% endif %}>Enero</option>
+                    <option value="2" {% if mes_actual == '2' %}selected{% endif %}>Febrero</option>
+                    <option value="3" {% if mes_actual == '3' %}selected{% endif %}>Marzo</option>
+                    <option value="4" {% if mes_actual == '4' %}selected{% endif %}>Abril</option>
+                    <option value="5" {% if mes_actual == '5' %}selected{% endif %}>Mayo</option>
+                    <option value="6" {% if mes_actual == '6' %}selected{% endif %}>Junio</option>
+                    <option value="7" {% if mes_actual == '7' %}selected{% endif %}>Julio</option>
+                    <option value="8" {% if mes_actual == '8' %}selected{% endif %}>Agosto</option>
+                    <option value="9" {% if mes_actual == '9' %}selected{% endif %}>Septiembre</option>
+                    <option value="10" {% if mes_actual == '10' %}selected{% endif %}>Octubre</option>
+                    <option value="11" {% if mes_actual == '11' %}selected{% endif %}>Noviembre</option>
+                    <option value="12" {% if mes_actual == '12' %}selected{% endif %}>Diciembre</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- MENSAJES DE ALERTA (Éxito o Info al cancelar) -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm border-0" role="alert">
+                    {% if message.tags == 'success' %}<i class="fas fa-check-circle me-2"></i>{% endif %}
+                    {% if message.tags == 'info' %}<i class="fas fa-info-circle me-2"></i>{% endif %}
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- LISTA DE RESERVAS -->
+        {% if reservas %}
+            <div class="row">
+                {% for r in reservas %}
+                <div class="col-lg-6 mb-4">
+                    <div class="card shadow-sm border-0 card-reserva {% if not r.pagado %}estado-pendiente{% endif %} h-100">
+                        <div class="card-body">
+                            
+                            <!-- Encabezado Tarjeta -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">{{ r.cancha.nombre }}</h5>
+                                    <div class="text-muted small">
+                                        <i class="fas fa-map-marker-alt text-danger"></i> {{ r.cancha.direccion }}
+                                    </div>
+                                </div>
+                                
+                                <!-- Badge de Estado -->
+                                {% if r.pagado %}
+                                    <span class="badge bg-success rounded-pill px-3 py-2 shadow-sm">
+                                        <i class="fas fa-check"></i> CONFIRMADO
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm">
+                                        <i class="fas fa-hourglass-half"></i> PENDIENTE
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <!-- Detalles (Caja Gris) -->
+                            <div class="bg-light p-3 rounded-3 mb-3 border border-light">
+                                <div class="row text-center">
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted fw-bold d-block" style="font-size: 0.7em;">FECHA</small>
+                                        <span class="fw-bold text-primary">{{ r.fecha|date:"d/m/Y" }}</span>
+                                    </div>
+                                    <div class="col-4 border-end">
+                                        <small class="text-muted fw-bold d-block" style="font-size: 0.7em;">HORA</small>
+                                        <span class="fw-bold text-primary">{{ r.hora_inicio|time:"H:i" }}</span>
+                                    </div>
+                                    <div class="col-4">
+                                        <small class="text-muted fw-bold d-block" style="font-size: 0.7em;">CÓDIGO</small>
+                                        <span class="text-muted small font-monospace">{{ r.codigo_reserva|slice:":5" }}...</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Pie de Tarjeta (Acciones) -->
+                            <div class="d-flex justify-content-between align-items-center mt-auto">
+                                <small class="text-muted">ID: #{{ r.id }}</small>
+                                
+                                <!-- Botón que abre el MODAL específico de esta reserva -->
+                                <button class="btn btn-sm btn-outline-danger fw-bold rounded-pill px-3" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalCancelar{{ r.id }}">
+                                    {% if r.pagado %}
+                                        <i class="fas fa-undo me-1"></i> Reembolsar
+                                    {% else %}
+                                        <i class="fas fa-trash me-1"></i> Eliminar
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODAL DE CONFIRMACIÓN (Uno por cada reserva) -->
+                    <div class="modal fade" id="modalCancelar{{ r.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg rounded-4">
+                                <div class="modal-header border-0 bg-light rounded-top-4">
+                                    <h5 class="modal-title fw-bold text-danger">
+                                        <i class="fas fa-exclamation-triangle"></i> ¿Cancelar Reserva?
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                
+                                <div class="modal-body text-center p-4">
+                                    <p class="mb-3 fs-5">Estás a punto de eliminar tu reserva en<br><strong>{{ r.cancha.nombre }}</strong>.</p>
+                                    
+                                    {% if r.pagado %}
+                                        <div class="alert alert-warning text-start small border-0 shadow-sm">
+                                            <strong><i class="fas fa-wallet"></i> Aviso de Reembolso:</strong><br>
+                                            Al confirmar, se enviará una solicitud automática a administración. El dinero será devuelto a tu cuenta Flow/Banco en un plazo de 72 horas hábiles.
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted small">Al no estar pagada, esta reserva se borrará inmediatamente y perderás el cupo reservado.</p>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="modal-footer border-0 justify-content-center pb-4">
+                                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">
+                                        No, volver
+                                    </button>
+                                    
+                                    <!-- Formulario POST para ejecutar la acción -->
+                                    <form action="{% url 'cancelar_reserva' r.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger rounded-pill px-4 fw-bold shadow-sm">
+                                            {% if r.pagado %}
+                                                Sí, Solicitar Reembolso
+                                            {% else %}
+                                                Sí, Eliminar Reserva
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- FIN MODAL -->
+
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- ESTADO VACÍO (Sin reservas) -->
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-calendar-times fa-4x text-muted opacity-25"></i>
+                </div>
+                <h4 class="text-muted fw-bold">No se encontraron reservas</h4>
+                <p class="text-muted mb-4">No tienes partidos programados para el mes seleccionado.</p>
+                <a href="{% url 'index' %}" class="btn btn-success rounded-pill px-5 fw-bold shadow-sm">
+                    <i class="fas fa-plus-circle me-2"></i> Reservar Cancha Nueva
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

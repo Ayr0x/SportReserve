@@ -1,0 +1,292 @@
+{% load static %}
+{% load socialaccount %} 
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SportReserve</title>
+    
+    <!-- FAVICON -->
+    <link rel="icon" type="image/png" href="{% static 'img/logo-top.png' %}">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- NUESTRO CSS PERSONALIZADO -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+</head>
+<body>
+
+    <!-- NAVEGACIÓN -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <!-- LOGO -->
+            <a class="navbar-brand fw-bold text-success d-flex align-items-center" href="#">
+                <img src="{% static 'img/logo-top.png' %}" alt="Logo" width="40" height="40" class="d-inline-block align-text-top me-2">
+                SportReserve
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="#inicio">Inicio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#reservas">Reservar Canchas</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#mapa">Mapa</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contacto">Contacto</a></li>
+                    
+                    {% if user.is_authenticated %}
+                        <li class="nav-item ms-2 dropdown">
+                            <!-- Botón Usuario (Estilo Outline para armonía) -->
+                            <a class="btn btn-outline-success dropdown-toggle rounded-pill px-3 fw-bold d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-user-circle"></i> {{ user.first_name|default:user.username }}
+                            </a>
+                            
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                <li><span class="dropdown-item-text text-muted small">{{ user.email }}</span></li>
+                                <li><hr class="dropdown-divider"></li>
+                                
+                                <!-- OPCIÓN CLIENTE: MIS RESERVAS -->
+                                <li>
+                                    <a class="dropdown-item" href="{% url 'mis_reservas' %}">
+                                        <i class="fas fa-history me-2 text-primary"></i> Mis Reservas
+                                    </a>
+                                </li>
+
+                                <!-- === AQUÍ ESTÁ EL CAMBIO: BOTÓN SECRETO PARA DUEÑOS === -->
+                                {% if es_dueno %}
+                                    <li>
+                                        <a class="dropdown-item fw-bold text-success bg-light" href="{% url 'dashboard_dueno' %}">
+                                            <i class="fas fa-chart-line me-2"></i> Gestionar mis Canchas
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                <!-- ====================================================== -->
+
+                                <li><hr class="dropdown-divider"></li>
+                                
+                                <!-- LOGOUT -->
+                                <li>
+                                    <form action="{% url 'account_logout' %}" method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i> Cerrar Sesión
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item ms-2">
+                            <a href="{% provider_login_url 'google' %}" class="btn btn-outline-danger rounded-pill shadow-sm px-4">
+                                <i class="fab fa-google"></i> Ingresar con Google
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+     {% if messages %}
+        <div class="position-fixed end-0 p-3" style="top: 80px; z-index: 2000; min-width: 320px; max-width: 400px;">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-lg border-0 d-flex align-items-center" role="alert">
+                    <!-- Icono dinámico según el tipo de mensaje -->
+                    {% if message.tags == 'success' %}
+                        <i class="fas fa-check-circle fs-4 me-3"></i>
+                    {% elif message.tags == 'error' or message.tags == 'danger' %}
+                        <i class="fas fa-exclamation-circle fs-4 me-3"></i>
+                    {% else %}
+                        <i class="fas fa-info-circle fs-4 me-3"></i>
+                    {% endif %}
+                    
+                    <div>{{ message }}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+            
+            <!-- Script para auto-cerrar después de 5 segundos -->
+            <script>
+                setTimeout(function() {
+                    let alerts = document.querySelectorAll('.alert');
+                    alerts.forEach(function(alert) {
+                        let bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    });
+                }, 5000); 
+            </script>
+        </div>
+    {% endif %}
+
+    <!-- PARTE 1: INICIO -->
+    <section id="inicio" class="hero-section">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">¡Ven a Jugar tu próximo partido!</h1>
+            <p class="lead mb-5">Las mejores canchas de Futbolito disponibles en Santiago te esperan.</p>
+            <a href="#reservas" class="hero-btn text-decoration-none">¡Reserva tu Cancha Aquí!</a>
+        </div>
+    </section>
+
+    <!-- PARTE 2: RESERVAS -->
+    <section id="reservas" class="py-5 bg-light">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Reserva tu Cancha</h2>
+                <p class="text-muted">¡Conoce las canchas disponibles ahora mismo!</p>
+            </div>
+
+            {% for cancha in canchas %}
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="row g-0">
+                    <div class="col-md-4">
+                        {% if cancha.imagen %}
+                            <img src="{{ cancha.imagen.url }}" class="cancha-img rounded-start" alt="{{ cancha.nombre }}">
+                        {% else %}
+                            <img src="https://via.placeholder.com/800x600?text=Sin+Foto" class="cancha-img rounded-start" alt="Sin foto">
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">{{ cancha.nombre }}</h5>
+                            <p class="card-text">{{ cancha.descripcion }}</p>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-map-marker-alt text-success"></i> {{ cancha.direccion }}</li>
+                                <li><i class="fas fa-layer-group text-success"></i> {{ cancha.get_superficie_display }}</li>
+                                <li><i class="fas fa-dollar-sign text-success"></i> <strong>${{ cancha.precio_hora }} / hora</strong></li>
+                            </ul>
+                            
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'reserva_detalle' cancha.id %}" class="btn btn-success fw-bold">
+                                    <i class="fas fa-calendar-alt"></i> Ver Disponibilidad y Reservar
+                                </a>
+                            {% else %}
+                                <a href="{% provider_login_url 'google' %}" class="btn btn-outline-primary">
+                                    <i class="fab fa-google"></i> Ingresa con Google para Reservar
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+                <div class="alert alert-warning text-center">
+                    <h4>No hay canchas registradas 😢</h4>
+                    <p>Entra al panel de administración (/admin) para crear algunas.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- PARTE 3: MAPA -->
+    <section id="mapa" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-4 fw-bold">Nuestras Ubicaciones</h2>
+            <div class="map-container shadow">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3329.415924221091!2d-70.70207174537383!3d-33.438468821338624!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMzPCsDI2JzE4LjUiUyA3MMKwNDInMDAuOSJX!5e0!3m2!1ses-419!2scl!4v1764545203671!5m2!1ses-419!2scl" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </section>
+
+    <!-- PARTE 4: CONTACTO -->
+    <section id="contacto" class="py-5 bg-dark text-white">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-7 mb-4">
+                    <h3 class="fw-bold mb-4">Contacto</h3>
+                    <h5 class="mb-3 text-warning">¿Gustas asociarte con nosotros?</h5>
+
+                    <form action="{% url 'contacto' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" name="nombre" class="form-control" placeholder="Tu nombre" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" name="telefono" class="form-control" placeholder="+569..." required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="nombre@correo.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Mensaje</label>
+                            <textarea name="mensaje" class="form-control" rows="4" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-success px-5">Enviar mensaje</button>
+                    </form>
+                    
+                    <p class="mt-4 small text-muted">
+                        <i class="fas fa-lock"></i> ¡No te preocupes! Tu información está protegida.
+                    </p>
+                </div>
+
+                <div class="col-md-5 d-flex flex-column justify-content-center align-items-center text-center">
+                    <div class="bg-white p-4 rounded-circle mb-4" style="width: 150px; height: 150px; display: flex; align-items: center; justify-content: center;">
+                        <img src="{% static 'img/logo-redes.png' %}" alt="Logo" width="100" class="img-fluid">
+                    </div>
+                    <h4>Síguenos en redes</h4>
+                    <div class="mt-3">
+                        <a href="https://www.facebook.com/SportReserve" 
+                            target="_blank" 
+                            rel="noopener" 
+                            class="btn btn-primary me-2 text-decoration-none">
+                            <i class="fab fa-facebook-f"></i> Facebook
+                        </a>
+                        <a href="https://www.instagram.com/sport_reserve/" 
+                            target="_blank" 
+                            rel="noopener" 
+                            class="btn btn-danger text-decoration-none">
+                            <i class="fab fa-instagram"></i> Instagram
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-white py-3 text-center">
+        <p class="mb-0">&copy; 2025 SportReserve. Todos los derechos reservados.</p>
+    </footer>
+
+    <!-- CHATBOT FLOTANTE -->
+    <div id="chatbot-widget">
+        <div class="chat-header" onclick="toggleChat()">
+            <span><i class="fas fa-robot"></i> Asistente ReserBot</span>
+            <i class="fas fa-chevron-up" id="chat-icon"></i>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="message bot-msg">
+                Hola, soy tu asistente virtual.
+                <br>Pregúntame por precios o disponibilidad.
+            </div>
+        </div>
+        <div class="chat-input-area" id="chat-input-area">
+            <div class="input-group">
+                <input type="text" id="user-input" class="form-control" placeholder="Escribe tu duda..." onkeypress="handleEnter(event)">
+                <button class="btn btn-success" type="button" onclick="sendMessage()"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Configuración para JS externo -->
+    <script>
+        window.isUserLoggedIn = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+    </script>
+
+    <script src="{% static 'js/scripts.js' %}"></script>
+
+</body>
+</html>
