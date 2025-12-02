@@ -87,7 +87,7 @@ def enviar_correo_reserva(usuario, reserva, tipo="confirmacion"):
 # VISTAS
 # ==========================================
 
-def index(request):
+def inicio(request):
     canchas = Cancha.objects.all()
     es_dueno = False
     if request.user.is_authenticated:
