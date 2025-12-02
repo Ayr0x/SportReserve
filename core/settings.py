@@ -8,13 +8,25 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+IS_PRODUCTION = 'PYTHONANYWHERE_DOMAIN' in os.environ
+
 # SEGURIDAD: Leemos la clave secreta del .env
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
-# DEBUG: En producción (PythonAnywhere) será False, local True
-DEBUG = True
-
-ALLOWED_HOSTS = ['*']
+if IS_PRODUCTION:
+    # ESTAMOS EN PYTHONANYWHERE
+    DEBUG = False 
+    # Aquí pones tu dominio nuevo Y el de pythonanywhere por si acaso
+    ALLOWED_HOSTS = ['www.sportreserve.space', 'sportreserve.space', '.pythonanywhere.com']
+    
+    # Configuraciones de seguridad extra para HTTPS
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+else:
+    # ESTAMOS EN TU PC (LOCALHOST)
+    DEBUG = True
+    ALLOWED_HOSTS = ['*']
 
 # Aplicaciones
 INSTALLED_APPS = [
